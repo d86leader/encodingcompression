@@ -6,6 +6,8 @@ module Haffman
 
 import Data.List
 import Data.Function
+import Utils
+import qualified Data.Map as Map
 
 -- A tree for use in creating haffman code
 data Tree a b    = Leaf b | Node a (Tree a b) (Tree a b)
@@ -64,3 +66,15 @@ buildHaffmanCodes' input_list = (unfold_tree . create_tree) input_list where
 				(_, "!") -> "1"
 				("", s)  -> '1' : s
 				(s, "")  -> '0' : s
+
+
+encodeHaffman ::
+	[(Char, String)] -> [Char] -> String
+encodeHaffman dict input =
+	basicEncode (Map.fromList dict) input
+
+
+decodeHaffman ::
+	[(Char, String)] -> String -> [Char]
+decodeHaffman dict input =
+	basicDecode (Map.fromList dict) input
