@@ -1,7 +1,7 @@
 module Haffman
 ( buildHaffmanCodes
--- , encodeHaffman
--- , decodeHaffman
+, encodeHaffman
+, decodeHaffman
 ) where
 
 import Data.List
