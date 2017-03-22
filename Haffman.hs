@@ -1,33 +1,33 @@
 module Haffman
 ( buildHaffmanCodes
-, encodeHaffman
-, decodeHaffman
+-- , encodeHaffman
+-- , decodeHaffman
 ) where
 
 import Data.List
 import Data.Function
 
 -- A tree for use in creating haffman code
-data Tree a b = Leaf b | Node a (Tree a b) (Tree a b)
-newtype HaffmanTree = Tree Real (Real, Char)
+data Tree a b    = Leaf b | Node a (Tree a b) (Tree a b)
+type HaffmanTree = Tree Double (Double, Char)
 
 
 buildHaffmanCodes ::
-	[(Char, Double)] -> [(Char, String)] -- symbol and its probability to symbol and its code
+	[(Double, Char)] -> [(Char, String)] -- symbol and its probability to symbol and its code
 
 -- passes a sorted input list to a real building function
 buildHaffmanCodes list = buildHaffmanCodes' $ sortBy (compare `on` snd) list
 
 buildHaffmanCodes' [] = []
-buildHaffmanCodes' [(c, _)] = [(c, "1")]
-buildHaffmanCodes' input_list = unfold_tree . create_tree input_list where
-	all_symbols = map fst input_list -- list of all symbols to build from
+buildHaffmanCodes' [(_, c)] = [(c, "0")]
+buildHaffmanCodes' input_list = (unfold_tree . create_tree) input_list where
+	all_symbols = map snd input_list -- list of all symbols to build from
 	
 	-- each tree node is an array of symbols downbranches and their probability sum
 	unfold_tree ::
 		HaffmanTree -> [(Char, String)]
 	create_tree ::
-		[(Char, String)] -> HaffmanTree
+		[(Double, Char)] -> HaffmanTree
 	
 	-- This funtion builds the foundation and then folds it into a tree
 	create_tree = extend_tree . (map Leaf) where
@@ -37,6 +37,7 @@ buildHaffmanCodes' input_list = unfold_tree . create_tree input_list where
 		
 		-- folding is done with taking the parts with the least probability
 		-- and making a node with them as children
+		-- and sorting the list so that the least probable elements are first
 		extend_tree (x : y : rest) =
 			extend_tree . (sortBy (compare `on` get_prob)) $
 				(Node (probability_sum x y) x y) : rest
@@ -54,7 +55,7 @@ buildHaffmanCodes' input_list = unfold_tree . create_tree input_list where
 			then "!" -- means found
 			else ""  -- means pass nothing upwards
 		extract_symbol (Node _ left right) x =
-			let left_str  = extract_symbol left  x,
+			let left_str  = extract_symbol left  x
 			    right_str = extract_symbol right x
 			in  case (left_str, right_str) of
 				-- 0 if found on left, 1 if found on right
