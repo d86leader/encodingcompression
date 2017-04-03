@@ -15,7 +15,7 @@ type HaffmanTree = Tree Double (Double, Char)
 
 
 buildHaffmanCodes ::
-	[(Double, Char)] -> [(Char, String)] -- symbol and its probability to symbol and its code
+	[(Double, Char)] -> [(Char, String)] -- symbol and its probability -> symbol and its code
 
 -- passes a sorted input list to a real building function
 buildHaffmanCodes list = buildHaffmanCodes' $ sortBy (compare `on` snd) list
