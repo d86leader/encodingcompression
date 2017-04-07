@@ -78,3 +78,16 @@ decodeHaffman ::
 	[(Char, String)] -> String -> [Char]
 decodeHaffman dict input =
 	basicDecode (Map.fromList dict) input
+
+
+encodeFromFiles ::
+	[FilePath] -> IO String
+encodeFromFiles (probs_name : working_name : []) = do
+	probs_text   <- openFile probs_name ReadMode   >>= hGetContens
+	working_text <- openFile working_name ReadMode >>= hGetContens
+	return $ encodeHaffman ( buildHaffmanCodes $ probs_from_text probs_text ) working_text
+	where
+		parse line =
+			let pr : c : _ = map show . words
+			in  (pr, c)
+		probs_from_text = map parse . lines
