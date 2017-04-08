@@ -86,7 +86,7 @@ probs_from_text :: String -> [(Double, Char)]
 probs_from_text = map parse_file_line . lines where
 	parse_file_line :: String -> (Double, Char)
 	parse_file_line line =
-		let pr : c : _ = map show . words $ line
+		let pr : c : _ = map read . words $ line
 		in  (pr, c)
 
 
