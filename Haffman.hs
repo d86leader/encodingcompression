@@ -2,12 +2,16 @@ module Haffman
 ( buildCodes
 , encode
 , decode
+, encodeFromFiles
+, decodeFromFiles
 ) where
 
 import Data.List
 import Data.Function
 import qualified Data.Map as Map
 import System.IO
+import Data.Char (isSpace)
+import System.Environment
 
 import Utils
 
@@ -36,7 +40,6 @@ buildCodes' input_list = (unfold_tree . create_tree) input_list where
 	-- This funtion builds the foundation and then folds it into a tree
 	create_tree = extend_tree . (map Leaf) where
 		
-		extend_tree [] = Leaf (0.0, 'a') -- TODO: something better goes here, an exception or else
 		extend_tree [x] = x
 		
 		-- folding is done with taking the parts with the least probability
@@ -87,20 +90,31 @@ probs_from_text = map parse_file_line . lines where
 	parse_file_line :: String -> (Double, Char)
 	parse_file_line line =
 		let pr : c : _ = words line
-		in  (read pr, read c)
+		in  (read pr, head c)
+
+strip_end :: String -> String
+strip_end = reverse . dropWhile isSpace . reverse
 
 
 encodeFromFiles ::
 	[FilePath] -> IO String
 encodeFromFiles (probs_name : working_name : []) = do
 	probs_text   <- openFile probs_name ReadMode   >>= hGetContents
-	working_text <- openFile working_name ReadMode >>= hGetContents
+	working_text <- openFile working_name ReadMode >>= hGetContents >>= return . strip_end
 	return $ encode ( buildCodes $ probs_from_text probs_text ) working_text
+encodeFromFiles _ = do
+	prg_name <- getProgName
+	putStrLn ("Usage: " ++ prg_name ++ " haffman_e probabilities text")
+	return ""
 
 
 decodeFromFiles ::
 	[FilePath] -> IO String
 decodeFromFiles (probs_name : working_name : []) = do
 	probs_text   <- openFile probs_name ReadMode   >>= hGetContents
-	working_text <- openFile working_name ReadMode >>= hGetContents
+	working_text <- openFile working_name ReadMode >>= hGetContents >>= return . strip_end
 	return $ decode ( buildCodes $ probs_from_text probs_text ) working_text
+decodeFromFiles _ = do
+	prg_name <- getProgName
+	putStrLn ("Usage: " ++ prg_name ++ " haffman_e probabilities text")
+	return ""
