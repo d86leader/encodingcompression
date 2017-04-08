@@ -14,7 +14,7 @@ data Tree a b    = Leaf b | Node a (Tree a b) (Tree a b)
 type HaffmanTree = Tree Double (Double, Char)
 
 
-buildHaffmanCodes ::
+buildCodes ::
 	[(Double, Char)] -> [(Char, String)] -- symbol and its probability -> symbol and its code
 
 -- passes a sorted input list to a real building function
@@ -68,16 +68,24 @@ buildHaffmanCodes' input_list = (unfold_tree . create_tree) input_list where
 				(s, "")  -> '0' : s
 
 
-encodeHaffman ::
+encode ::
 	[(Char, String)] -> [Char] -> String
 encodeHaffman dict input =
 	basicEncode (Map.fromList dict) input
 
 
-decodeHaffman ::
+decode ::
 	[(Char, String)] -> String -> [Char]
 decodeHaffman dict input =
 	basicDecode (Map.fromList dict) input
+
+
+probs_from_text :: String -> [(Double, Char)]
+probs_from_text = map parse_file_line . lines where
+	parse_file_line :: String -> (Double, Char)
+	parse_file_line line =
+		let pr : c : _ = map show . words $ line
+		in  (pr, c)
 
 
 encodeFromFiles ::
@@ -86,8 +94,11 @@ encodeFromFiles (probs_name : working_name : []) = do
 	probs_text   <- openFile probs_name ReadMode   >>= hGetContens
 	working_text <- openFile working_name ReadMode >>= hGetContens
 	return $ encodeHaffman ( buildHaffmanCodes $ probs_from_text probs_text ) working_text
-	where
-		parse line =
-			let pr : c : _ = map show . words
-			in  (pr, c)
-		probs_from_text = map parse . lines
+
+
+decodeFromFiles ::
+	[FilePath] -> IO String
+decodeFromFiles (probs_name : working_name : []) = do
+	probs_text   <- openFile probs_name ReadMode   >>= hGetContens
+	working_text <- openFile working_name ReadMode >>= hGetContens
+	return $ decodeHaffman ( buildHaffmanCodes $ probs_from_text probs_text ) working_text
