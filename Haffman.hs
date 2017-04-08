@@ -1,7 +1,7 @@
 module Haffman
 ( buildCodes
-, encodeHaffman
-, decodeHaffman
+, encode
+, decode
 ) where
 
 import Data.List
@@ -72,13 +72,13 @@ buildCodes' input_list = (unfold_tree . create_tree) input_list where
 
 encode ::
 	[(Char, String)] -> [Char] -> String
-encodeHaffman dict input =
+encode dict input =
 	basicEncode (Map.fromList dict) input
 
 
 decode ::
 	[(Char, String)] -> String -> [Char]
-decodeHaffman dict input =
+decode dict input =
 	basicDecode (Map.fromList dict) input
 
 
@@ -93,14 +93,14 @@ probs_from_text = map parse_file_line . lines where
 encodeFromFiles ::
 	[FilePath] -> IO String
 encodeFromFiles (probs_name : working_name : []) = do
-	probs_text   <- openFile probs_name ReadMode   >>= hGetContens
-	working_text <- openFile working_name ReadMode >>= hGetContens
-	return $ encodeHaffman ( buildCodes $ probs_from_text probs_text ) working_text
+	probs_text   <- openFile probs_name ReadMode   >>= hGetContents
+	working_text <- openFile working_name ReadMode >>= hGetContents
+	return $ encode ( buildCodes $ probs_from_text probs_text ) working_text
 
 
 decodeFromFiles ::
 	[FilePath] -> IO String
 decodeFromFiles (probs_name : working_name : []) = do
-	probs_text   <- openFile probs_name ReadMode   >>= hGetContens
-	working_text <- openFile working_name ReadMode >>= hGetContens
-	return $ decodeHaffman ( buildCodes $ probs_from_text probs_text ) working_text
+	probs_text   <- openFile probs_name ReadMode   >>= hGetContents
+	working_text <- openFile working_name ReadMode >>= hGetContents
+	return $ decode ( buildCodes $ probs_from_text probs_text ) working_text
