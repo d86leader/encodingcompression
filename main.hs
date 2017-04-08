@@ -1,4 +1,6 @@
 import System.Environment
+import System.IO
+
 import qualified Haffman
 
 coderFromMode "haffman_e" = Haffman.encodeFromFiles

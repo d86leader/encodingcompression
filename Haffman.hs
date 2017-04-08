@@ -1,13 +1,15 @@
 module Haffman
-( buildHaffmanCodes
+( buildCodes
 , encodeHaffman
 , decodeHaffman
 ) where
 
 import Data.List
 import Data.Function
-import Utils
 import qualified Data.Map as Map
+import System.IO
+
+import Utils
 
 -- A tree for use in creating haffman code
 data Tree a b    = Leaf b | Node a (Tree a b) (Tree a b)
@@ -18,11 +20,11 @@ buildCodes ::
 	[(Double, Char)] -> [(Char, String)] -- symbol and its probability -> symbol and its code
 
 -- passes a sorted input list to a real building function
-buildHaffmanCodes list = buildHaffmanCodes' $ sortBy (compare `on` snd) list
+buildCodes list = buildCodes' $ sortBy (compare `on` snd) list
 
-buildHaffmanCodes' [] = []
-buildHaffmanCodes' [(_, c)] = [(c, "0")]
-buildHaffmanCodes' input_list = (unfold_tree . create_tree) input_list where
+buildCodes' [] = []
+buildCodes' [(_, c)] = [(c, "0")]
+buildCodes' input_list = (unfold_tree . create_tree) input_list where
 	all_symbols = map snd input_list -- list of all symbols to build from
 	
 	-- each tree node is an array of symbols downbranches and their probability sum
@@ -93,7 +95,7 @@ encodeFromFiles ::
 encodeFromFiles (probs_name : working_name : []) = do
 	probs_text   <- openFile probs_name ReadMode   >>= hGetContens
 	working_text <- openFile working_name ReadMode >>= hGetContens
-	return $ encodeHaffman ( buildHaffmanCodes $ probs_from_text probs_text ) working_text
+	return $ encodeHaffman ( buildCodes $ probs_from_text probs_text ) working_text
 
 
 decodeFromFiles ::
@@ -101,4 +103,4 @@ decodeFromFiles ::
 decodeFromFiles (probs_name : working_name : []) = do
 	probs_text   <- openFile probs_name ReadMode   >>= hGetContens
 	working_text <- openFile working_name ReadMode >>= hGetContens
-	return $ decodeHaffman ( buildHaffmanCodes $ probs_from_text probs_text ) working_text
+	return $ decodeHaffman ( buildCodes $ probs_from_text probs_text ) working_text
