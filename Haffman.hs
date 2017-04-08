@@ -87,7 +87,7 @@ probs_from_text = map parse_file_line . lines where
 	parse_file_line :: String -> (Double, Char)
 	parse_file_line line =
 		let pr : c : _ = words line
-		in  (show pr, show c)
+		in  (read pr, read c)
 
 
 encodeFromFiles ::
