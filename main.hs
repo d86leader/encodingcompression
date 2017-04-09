@@ -1,10 +1,12 @@
 import System.Environment
 import System.IO
+import Debug.Hood.Observe
 
 import qualified Haffman
 
 coderFromMode "haffman_e" = Haffman.encodeFromFiles
 coderFromMode "haffman_d" = Haffman.decodeFromFiles
+coderFromMode invalid = \_ -> return (invalid ++ " is not an availible coder\n")
 
 main = do
 	argv <- getArgs
@@ -15,4 +17,4 @@ main = do
 	else
 		let (mode : filenames) = argv
 		    coder = coderFromMode mode
-		in  coder filenames >>= putStr
+		in  coder filenames >>= putStrO

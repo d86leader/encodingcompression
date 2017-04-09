@@ -1,3 +1,6 @@
+{-# LANGUAGE TypeSynonymInstances #-}
+{-# LANGUAGE FlexibleInstances #-}
+
 module Haffman
 ( buildCodes
 , encode
@@ -12,19 +15,22 @@ import qualified Data.Map as Map
 import System.IO
 import Data.Char (isSpace)
 import System.Environment
+import Debug.Hood.Observe -- (Observable, observe)
 
 import Utils
 
 -- A tree for use in creating haffman code
-data Tree a b    = Leaf b | Node a (Tree a b) (Tree a b)
+data Tree a b    = Leaf b | Node a (Tree a b) (Tree a b) deriving (Show)
 type HaffmanTree = Tree Double (Double, Char)
+
+instance Observable HaffmanTree where { observer = observeBase }
 
 
 buildCodes ::
 	[(Double, Char)] -> [(Char, String)] -- symbol and its probability -> symbol and its code
 
 -- passes a sorted input list to a real building function
-buildCodes list = buildCodes' $ sortBy (compare `on` snd) list
+buildCodes list = observe "buildCodes'" buildCodes' $ sortBy (compare `on` fst) list
 
 buildCodes' [] = []
 buildCodes' [(_, c)] = [(c, "0")]
@@ -38,7 +44,7 @@ buildCodes' input_list = (unfold_tree . create_tree) input_list where
 		[(Double, Char)] -> HaffmanTree
 	
 	-- This funtion builds the foundation and then folds it into a tree
-	create_tree = extend_tree . (map Leaf) where
+	create_tree = observe "extending" extend_tree . (map Leaf) where
 		
 		extend_tree [x] = x
 		
@@ -95,7 +101,7 @@ encodeFromFiles (probs_name : working_name : []) = do
 
 encodeFromFiles (probs_name : []) = do
 	probs_text <- openFile probs_name ReadMode >>= hGetContents
-	putStrLn $ show $ buildCodes $ probs_from_text probs_text
+	runO . putStrLn $ show $ buildCodes $ probs_from_text probs_text
 	return ""
 
 encodeFromFiles _ = do
