@@ -54,23 +54,12 @@ buildCodes' input_list = (unfold_tree . create_tree) input_list where
 				
 				probability_sum x y = (get_prob x) + (get_prob y)
 	
-	unfold_tree unfl_tree = map (\x -> (x, extract_symbol unfl_tree x)) all_symbols where
-		extract_symbol ::
-			HaffmanTree -> Char -> String
-		extract_symbol (Leaf (_, c)) x =
-			if c == x
-			then "!" -- means found
-			else ""  -- means pass nothing upwards
-		extract_symbol (Node _ left right) x =
-			let left_str  = extract_symbol left  x
-			    right_str = extract_symbol right x
-			in  case (left_str, right_str) of
-				-- 0 if found on left, 1 if found on right
-				-- added to the string generated downwards
-				("!", _) -> "0"
-				(_, "!") -> "1"
-				("", s)  -> '1' : s
-				(s, "")  -> '0' : s
+	unfold_tree (Leaf (_, x)) = [(x, "")]
+	unfold_tree (Node _ left_branch right_branch) =
+		let left  = unfold_tree left_branch
+		    right = unfold_tree right_branch
+		in  map (tangle '0') left  ++  map (tangle '1') right 
+		where tangle c (sym, str) = (sym, c : str)
 
 
 encode ::
@@ -98,13 +87,20 @@ strip_end = reverse . dropWhile isSpace . reverse
 
 encodeFromFiles ::
 	[FilePath] -> IO String
+
 encodeFromFiles (probs_name : working_name : []) = do
 	probs_text   <- openFile probs_name ReadMode   >>= hGetContents
 	working_text <- openFile working_name ReadMode >>= hGetContents >>= return . strip_end
 	return $ encode ( buildCodes $ probs_from_text probs_text ) working_text
+
+encodeFromFiles (probs_name : []) = do
+	probs_text <- openFile probs_name ReadMode >>= hGetContents
+	putStrLn $ show $ buildCodes $ probs_from_text probs_text
+	return ""
+
 encodeFromFiles _ = do
 	prg_name <- getProgName
-	putStrLn ("Usage: " ++ prg_name ++ " haffman_e probabilities text")
+	putStrLn ("Usage: " ++ prg_name ++ " haffman_e probabilities [text]")
 	return ""
 
 
