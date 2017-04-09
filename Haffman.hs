@@ -79,36 +79,32 @@ probs_from_text = map parse_file_line . lines where
 		let pr : c : _ = words line
 		in  (read pr, head c)
 
+-- this function was written because Data.Text one, albeit faster, was hard to use
 strip_end :: String -> String
 strip_end = reverse . dropWhile isSpace . reverse
 
 
-encodeFromFiles ::
-	[FilePath] -> IO String
+-- function to read and encode/decode files
+process_files ::
+	([(Char, String)] -> [Char] -> [Char]) -> -- basically encode() or decode()
+	[FilePath] ->
+	IO String
 
-encodeFromFiles (probs_name : working_name : []) = do
+process_files coder ( probs_name : working_name : [] ) = do
 	probs_text   <- openFile probs_name ReadMode   >>= hGetContents
 	working_text <- openFile working_name ReadMode >>= hGetContents >>= return . strip_end
-	return $ encode ( buildCodes $ probs_from_text probs_text ) working_text
+	return $ coder ( buildCodes $ probs_from_text probs_text ) working_text
 
-encodeFromFiles (probs_name : []) = do
+process_files coder (probs_name : []) = do
 	probs_text <- openFile probs_name ReadMode >>= hGetContents
 	putStrLn $ show $ buildCodes $ probs_from_text probs_text
 	return ""
 
-encodeFromFiles _ = do
+process_files _ _ = do
 	prg_name <- getProgName
 	putStrLn ("Usage: " ++ prg_name ++ " haffman_e probabilities [text]")
 	return ""
 
 
-decodeFromFiles ::
-	[FilePath] -> IO String
-decodeFromFiles (probs_name : working_name : []) = do
-	probs_text   <- openFile probs_name ReadMode   >>= hGetContents
-	working_text <- openFile working_name ReadMode >>= hGetContents >>= return . strip_end
-	return $ decode ( buildCodes $ probs_from_text probs_text ) working_text
-decodeFromFiles _ = do
-	prg_name <- getProgName
-	putStrLn ("Usage: " ++ prg_name ++ " haffman_e probabilities text")
-	return ""
+encodeFromFiles = process_files encode
+decodeFromFiles = process_files decode
