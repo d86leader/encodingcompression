@@ -24,13 +24,11 @@ buildCodes ::
 	[(Double, Char)] -> [(Char, String)] -- symbol and its probability -> symbol and its code
 
 -- passes a sorted input list to a real building function
-buildCodes list = buildCodes' $ sortBy (compare `on` snd) list
+buildCodes list = buildCodes' $ sortBy (compare `on` fst) list
 
 buildCodes' [] = []
 buildCodes' [(_, c)] = [(c, "0")]
 buildCodes' input_list = (unfold_tree . create_tree) input_list where
-	all_symbols = map snd input_list -- list of all symbols to build from
-	
 	-- each tree node is an array of symbols downbranches and their probability sum
 	unfold_tree ::
 		HaffmanTree -> [(Char, String)]
@@ -47,7 +45,7 @@ buildCodes' input_list = (unfold_tree . create_tree) input_list where
 		-- and sorting the list so that the least probable elements are first
 		extend_tree (x : y : rest) =
 			extend_tree . (sortBy (compare `on` get_prob)) $
-				(Node (probability_sum x y) x y) : rest
+				(Node (x `probability_sum` y) x y) : rest
 			where
 				get_prob (Leaf (x, _)) = x
 				get_prob (Node x _ _)  = x

@@ -5,6 +5,7 @@ import qualified Haffman
 
 coderFromMode "haffman_e" = Haffman.encodeFromFiles
 coderFromMode "haffman_d" = Haffman.decodeFromFiles
+coderFromMode invalid = \_ -> return (invalid ++ " is not an availible coder\n")
 
 main = do
 	argv <- getArgs
