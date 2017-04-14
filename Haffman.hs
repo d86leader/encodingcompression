@@ -8,10 +8,12 @@ module Haffman
 
 import Data.List
 import Data.Function
-import qualified Data.Map as Map
 import System.IO
 import Data.Char (isSpace)
 import System.Environment
+import qualified Data.Map     as M
+import qualified Data.Text    as T
+import qualified Data.Text.IO as TIO
 
 import Utils
 
@@ -21,17 +23,17 @@ type HaffmanTree = Tree Double (Double, Char)
 
 
 buildCodes ::
-	[(Double, Char)] -> [(Char, String)] -- symbol and its probability -> symbol and its code
+	[(Double, Char)] -> [(Char, T.Text)] -- symbol and its probability -> symbol and its code
 
 -- passes a sorted input list to a real building function
 buildCodes list = buildCodes' $ sortBy (compare `on` fst) list
 
 buildCodes' [] = []
-buildCodes' [(_, c)] = [(c, "0")]
+buildCodes' [(_, c)] = [(c, T.pack "0")]
 buildCodes' input_list = (unfold_tree . create_tree) input_list where
 	-- each tree node is an array of symbols downbranches and their probability sum
 	unfold_tree ::
-		HaffmanTree -> [(Char, String)]
+		HaffmanTree -> [(Char, T.Text)]
 	create_tree ::
 		[(Double, Char)] -> HaffmanTree
 	
@@ -52,24 +54,24 @@ buildCodes' input_list = (unfold_tree . create_tree) input_list where
 				
 				probability_sum x y = (get_prob x) + (get_prob y)
 	
-	unfold_tree (Leaf (_, x)) = [(x, "")]
+	unfold_tree (Leaf (_, x)) = [(x, T.empty)]
 	unfold_tree (Node _ left_branch right_branch) =
 		let left  = unfold_tree left_branch
 		    right = unfold_tree right_branch
 		in  map (tangle '0') left  ++  map (tangle '1') right 
-		where tangle c (sym, str) = (sym, c : str)
+		where tangle c (sym, str) = (sym, T.cons c str)
 
 
 encode ::
-	[(Char, String)] -> [Char] -> String
+	[(Char, T.Text)] -> T.Text -> T.Text
 encode dict input =
-	basicEncode (Map.fromList dict) input
+	basicEncode (M.fromList dict) input
 
 
 decode ::
-	[(Char, String)] -> String -> [Char]
+	[(Char, T.Text)] -> T.Text -> T.Text
 decode dict input =
-	basicDecode (Map.fromList dict) input
+	basicDecode (M.fromList dict) input
 
 
 probs_from_text :: String -> [(Double, Char)]
@@ -79,20 +81,16 @@ probs_from_text = map parse_file_line . lines where
 		let pr : c : _ = words line
 		in  (read pr, head c)
 
--- this function was written because Data.Text one, albeit faster, was hard to use
-strip_end :: String -> String
-strip_end = reverse . dropWhile isSpace . reverse
-
 
 -- function to read and encode/decode files
 process_files ::
-	([(Char, String)] -> [Char] -> [Char]) -> -- basically encode() or decode()
+	( [(Char, T.Text)] -> T.Text -> T.Text ) -> -- basically encode() or decode()
 	[FilePath] ->
-	IO String
+	IO T.Text
 
 process_files coder ( probs_name : working_name : [] ) = do
-	probs_text   <- openFile probs_name ReadMode   >>= hGetContents
-	working_text <- openFile working_name ReadMode >>= hGetContents >>= return . strip_end
+	probs_text   <- openFile probs_name ReadMode   >>= T.hGetContents
+	working_text <- openFile working_name ReadMode >>= T.hGetContents >>= return . strip
 	return $ coder ( buildCodes $ probs_from_text probs_text ) working_text
 
 process_files coder (probs_name : []) = do
