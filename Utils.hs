@@ -15,7 +15,7 @@ basicEncode dict string = T.concatMap ((M.!) dict) string
 
 
 basicDecode :: Thesaurus -> T.Text -> T.Text
-basicDecode dict string = decode_next [] "" string where
+basicDecode dict string = decode_next T.empty T.empty string where
 	-- traverses map to find matching value. if multiple, finds the first one
 	find_key_by_value :: T.Text -> Maybe Char
 	find_key_by_value value =
@@ -40,11 +40,11 @@ basicDecode dict string = decode_next [] "" string where
 	decode_next done current rest
 		| current == T.empty && rest == T.empty  = done
 		| rest == T.empty  = 
-			error "unexpected end of string. Made out of it: " ++ s
+			error $ "unexpected end of string. Made out of it: " ++ T.unpack done
 		| otherwise  =
-			let Just (x, xs) = uncons rest
-			    cur         = snoc current x
-				maybe_key   = find_key_by_value cur
+			let Just (x, xs) = T.uncons rest
+			    cur          = T.snoc current x
+			    maybe_key    = find_key_by_value cur
 			in  case maybe_key of
-				Just key -> decode_next (snoc done key) T.empty xs
+				Just key -> decode_next (T.snoc done key) T.empty xs
 				Nothing  -> decode_next done cur xs

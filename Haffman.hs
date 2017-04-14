@@ -74,12 +74,14 @@ decode dict input =
 	basicDecode (M.fromList dict) input
 
 
-probs_from_text :: String -> [(Double, Char)]
-probs_from_text = map parse_file_line . lines where
-	parse_file_line :: String -> (Double, Char)
+probs_from_text :: T.Text -> [(Double, Char)]
+probs_from_text = map parse_file_line . T.lines where
+	parse_file_line :: T.Text -> (Double, Char)
 	parse_file_line line =
-		let pr : c : _ = words line
-		in  (read pr, head c)
+		let pr : c : _ = T.words line
+		    pr' = read . T.unpack $ pr
+		    c'  = T.head c
+		in  (pr', c')
 
 
 -- function to read and encode/decode files
@@ -89,19 +91,19 @@ process_files ::
 	IO T.Text
 
 process_files coder ( probs_name : working_name : [] ) = do
-	probs_text   <- openFile probs_name ReadMode   >>= T.hGetContents
-	working_text <- openFile working_name ReadMode >>= T.hGetContents >>= return . strip
+	probs_text   <- openFile probs_name ReadMode   >>= TIO.hGetContents
+	working_text <- openFile working_name ReadMode >>= TIO.hGetContents >>= return . T.strip
 	return $ coder ( buildCodes $ probs_from_text probs_text ) working_text
 
 process_files coder (probs_name : []) = do
-	probs_text <- openFile probs_name ReadMode >>= hGetContents
+	probs_text <- openFile probs_name ReadMode >>= TIO.hGetContents
 	putStrLn $ show $ buildCodes $ probs_from_text probs_text
-	return ""
+	return T.empty
 
 process_files _ _ = do
 	prg_name <- getProgName
 	putStrLn ("Usage: " ++ prg_name ++ " haffman_e probabilities [text]")
-	return ""
+	return T.empty
 
 
 encodeFromFiles = process_files encode
