@@ -62,6 +62,9 @@ buildCodes' input_list = (unfold_tree . create_tree) input_list where
 		where tangle c (sym, str) = (sym, T.cons c str)
 
 
+--------------------------------------------------------------------------------
+
+
 encode ::
 	[(Char, T.Text)] -> T.Text -> T.Text
 encode dict input =
@@ -84,27 +87,32 @@ probs_from_text = map parse_file_line . T.lines where
 		in  (pr', c')
 
 
--- function to read and encode/decode files
-process_files ::
-	( [(Char, T.Text)] -> T.Text -> T.Text ) -> -- basically encode() or decode()
-	[FilePath] ->
-	IO T.Text
+--------------------------------------------------------------------------------
 
-process_files coder ( probs_name : working_name : [] ) = do
+
+decodeFromFiles ( probs_name : working_name : [] ) = do
 	probs_text   <- openFile probs_name ReadMode   >>= TIO.hGetContents
 	working_text <- openFile working_name ReadMode >>= TIO.hGetContents >>= return . T.strip
 	return $ coder ( buildCodes $ probs_from_text probs_text ) working_text
 
-process_files coder (probs_name : []) = do
+decodeFromFiles (probs_name : []) = do
 	probs_text <- openFile probs_name ReadMode >>= TIO.hGetContents
 	putStrLn $ show $ buildCodes $ probs_from_text probs_text
 	return T.empty
 
-process_files _ _ = do
+decodeFromFiles _ = do
 	prg_name <- getProgName
-	putStrLn ("Usage: " ++ prg_name ++ " haffman_e probabilities [text]")
+	putStrLn ("Usage: " ++ prg_name ++ " haffman_d probabilities [text]")
 	return T.empty
 
 
-encodeFromFiles = process_files encode
-decodeFromFiles = process_files decode
+
+encodeFromFiles (filename : []) = do
+	probabilities <- countProbabilities filename >>= return . M.toList
+	working_text  <- openFile working_name ReadMode >>= TIO.hGetContents >>= return . T.strip
+	return $ encode ( buildCodes probabilities ) working_text
+
+encodeFromFiles _ = do
+	prg_name <- getProgName
+	putStrLn ("Usage: " ++ prg_name ++ " haffman_e textfile")
+	return T.empty
