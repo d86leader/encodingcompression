@@ -4,13 +4,12 @@ module Haffman
 , decode
 , encodeFromFiles
 , decodeFromFiles
+, buildFromFiles
 ) where
 
 import Data.List
 import Data.Function
 import System.IO
-import Data.Char (isSpace)
-import System.Environment
 import qualified Data.Map     as M
 import qualified Data.Text    as T
 import qualified Data.Text.IO as TIO
@@ -93,26 +92,25 @@ probs_from_text = map parse_file_line . T.lines where
 decodeFromFiles ( probs_name : working_name : [] ) = do
 	probs_text   <- openFile probs_name ReadMode   >>= TIO.hGetContents
 	working_text <- openFile working_name ReadMode >>= TIO.hGetContents >>= return . T.strip
-	return $ coder ( buildCodes $ probs_from_text probs_text ) working_text
+	return $ decode ( buildCodes $ probs_from_text probs_text ) working_text
 
 decodeFromFiles (probs_name : []) = do
 	probs_text <- openFile probs_name ReadMode >>= TIO.hGetContents
 	putStrLn $ show $ buildCodes $ probs_from_text probs_text
 	return T.empty
 
-decodeFromFiles _ = do
-	prg_name <- getProgName
-	putStrLn ("Usage: " ++ prg_name ++ " haffman_d probabilities [text]")
-	return T.empty
+decodeFromFiles _ = noFileSupplied "haffman_d probabilities [text]"
 
 
 
 encodeFromFiles (filename : []) = do
 	probabilities <- countProbabilities filename >>= return . M.toList
-	working_text  <- openFile working_name ReadMode >>= TIO.hGetContents >>= return . T.strip
+	working_text  <- openFile filename ReadMode >>= TIO.hGetContents >>= return . T.strip
 	return $ encode ( buildCodes probabilities ) working_text
+encodeFromFiles _ = noFileSupplied "haffman_e textfile"
 
-encodeFromFiles _ = do
-	prg_name <- getProgName
-	putStrLn ("Usage: " ++ prg_name ++ " haffman_e textfile")
-	return T.empty
+
+buildFromFiles (filename : []) = do
+	codes <- return . buildCodes . M.toList =<< countProbabilities filename
+	return . T.pack . show $ codes
+buildFromFiles _ = noFileSupplied "haffman_b textfile"

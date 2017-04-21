@@ -2,11 +2,16 @@ module Utils
 ( basicEncode
 , basicDecode
 , countProbabilities
+, noFileSupplied 
 ) where
 
-import qualified Data.Map  as M
-import qualified Data.Text as T
+import qualified Data.Map     as M
+import qualified Data.Text    as T
+import qualified Data.Text.IO as TIO
+import System.IO
 import Control.Monad
+import System.Environment
+import Data.Function
 
 type Thesaurus = M.Map Char T.Text
 
@@ -42,13 +47,26 @@ basicDecode dict string = decode_next T.empty T.empty string where
 				Nothing  -> decode_next done cur xs
 
 
-countProbabilities :: FilePath -> IO Thesaurus
+countProbabilities :: FilePath -> IO (M.Map Double Char)
 countProbabilities filename = do
 	text <- openFile filename ReadMode >>= TIO.hGetContents >>= return . T.strip
 	let text_length   = T.length text
-	let probabilities   = map symbol_and_probability . T.group $ text
-	return M.fromList probabilities
-	where symbol_and_probability chars =
-		let c   = T.head   chars
-		    len = T.length chars
-		in  (c, len / text_length)
+	let grouped       = T.group text
+	let probabilities = map (symbol_and_probability text_length) grouped
+	return $ M.fromList probabilities
+	where
+		symbol_and_probability total_length chars =
+			let c   = T.head chars
+			    len = fromIntegral . T.length $ chars
+			    frac_length = fromIntegral total_length
+			in  (len / frac_length, c)
+
+
+--------------------------------------------------------------------------------
+
+
+noFileSupplied :: String -> IO T.Text
+noFileSupplied usecase = do
+	prg_name <- getProgName
+	putStrLn ("Usage: " ++ prg_name ++ " " ++ usecase)
+	return T.empty

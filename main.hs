@@ -7,6 +7,7 @@ import qualified Haffman
 
 coderFromMode "haffman_e" = Haffman.encodeFromFiles
 coderFromMode "haffman_d" = Haffman.decodeFromFiles
+coderFromMode "haffman_b" = Haffman.buildFromFiles
 coderFromMode invalid = \_ -> return . T.pack $ (invalid ++ " is not an availible coder\n")
 
 main = do
