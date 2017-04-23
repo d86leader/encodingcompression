@@ -36,12 +36,12 @@ buildCodes' input_list = (unfold_tree . create_tree) input_list where
 		HaffmanTree -> [(Char, T.Text)]
 	create_tree ::
 		[(Double, Char)] -> HaffmanTree
-	
+	--
 	-- This funtion builds the foundation and then folds it into a tree
 	create_tree = extend_tree . map Leaf where
-		
+		--
 		extend_tree [x] = x
-		
+		--
 		-- folding is done with taking the parts with the least probability
 		-- and making a node with them as children
 		-- and sorting the list so that the least probable elements are first
@@ -51,9 +51,9 @@ buildCodes' input_list = (unfold_tree . create_tree) input_list where
 			where
 				get_prob (Leaf (x, _)) = x
 				get_prob (Node x _ _)  = x
-				
+				--
 				probability_sum x y = (get_prob x) + (get_prob y)
-	
+	--
 	unfold_tree (Leaf (_, x)) = [(x, T.empty)]
 	unfold_tree (Node _ left_branch right_branch) =
 		let left  = unfold_tree left_branch
@@ -78,13 +78,6 @@ decode dict =
 
 
 probs_from_text :: T.Text -> [(Double, Char)]
--- probs_from_text = map parse_file_line . T.lines where
--- 	parse_file_line :: T.Text -> (Double, Char)
--- 	parse_file_line line =
--- 		let pr : c : _ = T.words line
--- 		    pr' = read . T.unpack $ pr
--- 		    c'  = T.head c
--- 		in  (pr', c')
 probs_from_text = map swap . read . T.unpack
 
 
@@ -110,7 +103,6 @@ decodeFromFiles _ = noFileSupplied "haffman_d probabilities [text]"
 encodeFromFiles :: [FilePath] -> IO T.Text
 
 encodeFromFiles [filename] = do
--- 	probabilities <- countProbabilities filename >>= return . M.toList
 	probabilities <- return . map swap . M.toList =<< countProbabilities `onFile` filename
 	working_text  <- openFile filename ReadMode >>= TIO.hGetContents >>= return . T.strip
 	return $ encode ( buildCodes probabilities ) working_text

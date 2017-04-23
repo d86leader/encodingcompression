@@ -44,7 +44,7 @@ basicDecode dict string = decode_next T.empty T.empty string where
 				then Just key
 				else Nothing
 			return_match found _ _ = found
-	
+	--
 	-- crawls the string "rest" with a window "current", decoding into "done"
 	decode_next :: T.Text -> T.Text -> T.Text -> T.Text
 	decode_next done current rest
