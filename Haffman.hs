@@ -8,6 +8,7 @@ module Haffman
 ) where
 
 import Data.List
+import Data.Tuple
 import Data.Function
 import System.IO
 import qualified Data.Map     as M
@@ -37,7 +38,7 @@ buildCodes' input_list = (unfold_tree . create_tree) input_list where
 		[(Double, Char)] -> HaffmanTree
 	
 	-- This funtion builds the foundation and then folds it into a tree
-	create_tree = extend_tree . (map Leaf) where
+	create_tree = extend_tree . map Leaf where
 		
 		extend_tree [x] = x
 		
@@ -45,7 +46,7 @@ buildCodes' input_list = (unfold_tree . create_tree) input_list where
 		-- and making a node with them as children
 		-- and sorting the list so that the least probable elements are first
 		extend_tree (x : y : rest) =
-			extend_tree . (sortBy (compare `on` get_prob)) $
+			extend_tree . sortBy (compare `on` get_prob) $
 				(Node (x `probability_sum` y) x y) : rest
 			where
 				get_prob (Leaf (x, _)) = x
@@ -66,51 +67,59 @@ buildCodes' input_list = (unfold_tree . create_tree) input_list where
 
 encode ::
 	[(Char, T.Text)] -> T.Text -> T.Text
-encode dict input =
-	basicEncode (M.fromList dict) input
+encode dict =
+	basicEncode (M.fromList dict)
 
 
 decode ::
 	[(Char, T.Text)] -> T.Text -> T.Text
-decode dict input =
-	basicDecode (M.fromList dict) input
+decode dict =
+	basicDecode (M.fromList dict)
 
 
 probs_from_text :: T.Text -> [(Double, Char)]
-probs_from_text = map parse_file_line . T.lines where
-	parse_file_line :: T.Text -> (Double, Char)
-	parse_file_line line =
-		let pr : c : _ = T.words line
-		    pr' = read . T.unpack $ pr
-		    c'  = T.head c
-		in  (pr', c')
+-- probs_from_text = map parse_file_line . T.lines where
+-- 	parse_file_line :: T.Text -> (Double, Char)
+-- 	parse_file_line line =
+-- 		let pr : c : _ = T.words line
+-- 		    pr' = read . T.unpack $ pr
+-- 		    c'  = T.head c
+-- 		in  (pr', c')
+probs_from_text = map swap . read . T.unpack
 
 
 --------------------------------------------------------------------------------
 
 
-decodeFromFiles ( probs_name : working_name : [] ) = do
-	probs_text   <- openFile probs_name ReadMode   >>= TIO.hGetContents
+decodeFromFiles :: [FilePath] -> IO T.Text
+
+decodeFromFiles [probs_name, working_name] = do
+	probs_text   <- openFile probs_name ReadMode   >>= TIO.hGetContents >>= return . T.strip
 	working_text <- openFile working_name ReadMode >>= TIO.hGetContents >>= return . T.strip
 	return $ decode ( buildCodes $ probs_from_text probs_text ) working_text
 
-decodeFromFiles (probs_name : []) = do
+decodeFromFiles [probs_name] = do
 	probs_text <- openFile probs_name ReadMode >>= TIO.hGetContents
-	putStrLn $ show $ buildCodes $ probs_from_text probs_text
+	print $ buildCodes $ probs_from_text probs_text
 	return T.empty
 
 decodeFromFiles _ = noFileSupplied "haffman_d probabilities [text]"
 
 
 
-encodeFromFiles (filename : []) = do
-	probabilities <- countProbabilities filename >>= return . M.toList
+encodeFromFiles :: [FilePath] -> IO T.Text
+
+encodeFromFiles [filename] = do
+-- 	probabilities <- countProbabilities filename >>= return . M.toList
+	probabilities <- return . map swap . M.toList =<< countProbabilities `onFile` filename
 	working_text  <- openFile filename ReadMode >>= TIO.hGetContents >>= return . T.strip
 	return $ encode ( buildCodes probabilities ) working_text
 encodeFromFiles _ = noFileSupplied "haffman_e textfile"
 
 
-buildFromFiles (filename : []) = do
-	codes <- return . buildCodes . M.toList =<< countProbabilities filename
+buildFromFiles :: [FilePath] -> IO T.Text
+
+buildFromFiles [filename] = do
+	codes <- return . buildCodes . map swap . M.toList =<< countProbabilities `onFile` filename
 	return . T.pack . show $ codes
 buildFromFiles _ = noFileSupplied "haffman_b textfile"

@@ -1,20 +1,33 @@
 module Utils
 ( basicEncode
 , basicDecode
+, onFile
+, onFirstFile
 , countProbabilities
 , noFileSupplied 
+, countProbabilitiesInFile 
 ) where
 
 import qualified Data.Map     as M
 import qualified Data.Text    as T
 import qualified Data.Text.IO as TIO
 import System.IO
-import Control.Monad
 import System.Environment
 import Data.Function
 
 type Thesaurus = M.Map Char T.Text
 
+
+onFile :: (T.Text -> a) -> FilePath -> IO a
+onFile func filename = do
+	text <- openFile filename ReadMode >>= TIO.hGetContents >>= return . T.strip
+	return $ func text
+
+onFirstFile :: (T.Text -> a) -> [FilePath] -> IO a
+onFirstFile func [filename] = func `onFile` filename
+onFirstFile _ _ = error "Called onFirstFile on an invalid array. Try providing exactly one file name."
+
+--------------------------------------------------------------------------------
 
 basicEncode :: Thesaurus -> T.Text -> T.Text
 basicEncode dict string = T.concatMap ((M.!) dict) string
@@ -47,20 +60,19 @@ basicDecode dict string = decode_next T.empty T.empty string where
 				Nothing  -> decode_next done cur xs
 
 
-countProbabilities :: FilePath -> IO (M.Map Double Char)
-countProbabilities filename = do
-	text <- openFile filename ReadMode >>= TIO.hGetContents >>= return . T.strip
-	let text_length   = T.length text
-	let grouped       = T.group text
-	let probabilities = map (symbol_and_probability text_length) grouped
-	return $ M.fromList probabilities
-	where
-		symbol_and_probability total_length chars =
-			let c   = T.head chars
-			    len = fromIntegral . T.length $ chars
-			    frac_length = fromIntegral total_length
-			in  (len / frac_length, c)
+--------------------------------------------------------------------------------
 
+
+countProbabilities :: T.Text -> M.Map Char Double
+countProbabilities text =
+	let text_length = T.length text
+	    occurences  = M.fromListWith (+) . ( `zip` [1,1..] ) $ T.unpack text
+	in  M.map (symbol_and_probability text_length) occurences
+	where symbol_and_probability = flip (/) `on` fromIntegral
+
+
+countProbabilitiesInFile :: [FilePath] -> IO T.Text
+countProbabilitiesInFile = onFirstFile (T.pack . show . M.toList . countProbabilities)
 
 --------------------------------------------------------------------------------
 
