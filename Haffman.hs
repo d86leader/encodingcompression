@@ -77,17 +77,13 @@ decode dict =
 	basicDecode (M.fromList dict)
 
 
-probs_from_text :: T.Text -> [(Double, Char)]
-probs_from_text = map swap . read . T.unpack
-
-
 --------------------------------------------------------------------------------
 
 
 decodeFromFiles :: [FilePath] -> IO T.Text
 
 decodeFromFiles [probs_name, working_name] = do
-	probs_text   <- openFile probs_name ReadMode   >>= TIO.hGetContents >>= return . T.strip
+	probs_text   <- openFile probs_name   ReadMode >>= TIO.hGetContents >>= return . T.strip
 	working_text <- openFile working_name ReadMode >>= TIO.hGetContents >>= return . T.strip
 	return $ decode ( buildCodes $ probs_from_text probs_text ) working_text
 
@@ -96,7 +92,7 @@ decodeFromFiles [probs_name] = do
 	print $ buildCodes $ probs_from_text probs_text
 	return T.empty
 
-decodeFromFiles _ = noFileSupplied "haffman_d probabilities [text]"
+decodeFromFiles _ = noFileSupplied "haffman_d probabilities [textfile]"
 
 
 

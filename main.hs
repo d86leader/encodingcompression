@@ -3,12 +3,18 @@ import qualified Data.Text    as T
 import qualified Data.Text.IO as TIO
 
 import qualified Haffman
+import qualified Arithmetic
 import Utils
 
 coderFromMode "haffman_e" = Haffman.encodeFromFiles
 coderFromMode "haffman_d" = Haffman.decodeFromFiles
 coderFromMode "haffman_b" = Haffman.buildFromFiles
+
+coderFromMode "arithm_e"  = Arithmetic.encodeFromFiles
+coderFromMode "arithm_d"  = Arithmetic.decodeFromFiles
+
 coderFromMode "count_letters" = countProbabilitiesInFile
+
 coderFromMode invalid = \_ -> return . T.pack $ (invalid ++ " is not an availible coder\n")
 
 main = do

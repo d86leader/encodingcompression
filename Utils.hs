@@ -6,6 +6,7 @@ module Utils
 , countProbabilities
 , noFileSupplied 
 , countProbabilitiesInFile 
+, probs_from_text
 ) where
 
 import qualified Data.Map     as M
@@ -14,6 +15,7 @@ import qualified Data.Text.IO as TIO
 import System.IO
 import System.Environment
 import Data.Function
+import Data.Tuple
 
 type Thesaurus = M.Map Char T.Text
 
@@ -75,6 +77,10 @@ countProbabilitiesInFile :: [FilePath] -> IO T.Text
 countProbabilitiesInFile = onFirstFile (T.pack . show . M.toList . countProbabilities)
 
 --------------------------------------------------------------------------------
+
+
+probs_from_text :: T.Text -> [(Double, Char)]
+probs_from_text = map swap . read . T.unpack
 
 
 noFileSupplied :: String -> IO T.Text
