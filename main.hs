@@ -4,6 +4,7 @@ import qualified Data.Text.IO as TIO
 
 import qualified Haffman
 import qualified Arithmetic
+import qualified C_Arithm
 import Utils
 
 coderFromMode "haffman_e" = Haffman.encodeFromFiles
@@ -12,6 +13,10 @@ coderFromMode "haffman_b" = Haffman.buildFromFiles
 
 coderFromMode "arithm_e"  = Arithmetic.encodeFromFiles
 coderFromMode "arithm_d"  = Arithmetic.decodeFromFiles
+
+coderFromMode "carithm_e" = C_Arithm.encodeFromFiles
+coderFromMode "carithm_d" = C_Arithm.decodeFromFiles
+coderFromMode "carithm_b" = C_Arithm.cumulatedFreqsInFile
 
 coderFromMode "count_letters" = countProbabilitiesInFile
 
