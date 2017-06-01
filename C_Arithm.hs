@@ -124,15 +124,15 @@ decode :: Prob_map -> T.Text -> Integer -> T.Text
 decode cumul_frequences cipher del =
     let init_low    = 0
         init_high   = largest_integer
+		-- Add an infinite amount of ones to ensure finding eof
+        cipher' = cipher `T.snoc` '0' `T.append` (T.repeat '1')
         -- ehhh. Code is alright, i despise the need in this
         -- puts first bits_in_int bits to integer value
         init_repres =
             T.foldl (\s c -> s * 2 + bit_to_text c) 0
-                $ T.take bits_in_int cipher
+                $ T.take bits_in_int cipher'
         -- don't forget to drop rêad bits in ciphertext
-        cipher' = T.drop bits_in_int cipher
-        -- also there's a strange thing with following bits..
-        cipher'' = cipher' `T.snoc` '0' `T.append` (T.repeat '1')
+        cipher'' = T.drop bits_in_int cipher'
         --
     in  decode' init_low init_high init_repres cipher''
     where
