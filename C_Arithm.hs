@@ -164,7 +164,8 @@ decode cumul_frequences cipher del =
                 else symbol `T.cons` decode'debug symbol n_low n_high n_repr n_bits
         --
         shrink_read low high x bits 
-         | bits == T.empty = (0, 0, 0, T.empty) -- kostyl
+--          | bits == T.empty = (0, 0, 0, T.empty) -- kostyl
+         | bits == T.empty = error "something went wrong when decoding!"
          | high < half_int =
             let val = ((x * 2) `mod` integer_modulo) + (bit_to_text . T.head $ bits)
                 n_low  = 2 * low
