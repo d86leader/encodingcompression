@@ -6,9 +6,9 @@ module C_Arithm
 , cumulatedFreqsInFile
 ) where
 
-import qualified Data.Map     as M
-import qualified Data.Text    as T
-import qualified Data.Text.IO as TIO
+import qualified Data.Map          as M
+import qualified Data.Text.Lazy    as T
+import qualified Data.Text.Lazy.IO as TIO
 import System.IO
 
 import Debug.Hood.Observe
@@ -49,7 +49,7 @@ count_frequencies text =
         cumulated  = zipWith accumulate occurences (('\0', (0, 0)) : cumulated)
         -- this number is used for delayed division (to find real probability)
         -- [ ... (_, (this one, _)) ]
-        del        = fst . snd . last $ cumulated
+        del = fst . snd . last $ cumulated
     in  (M.fromList cumulated, del)
     where accumulate (c, cur) (_, (prev, _)) = (c, (cur + prev, prev))
 
@@ -132,7 +132,7 @@ decode cumul_frequences cipher del =
         -- don't forget to drop reAd bits in ciphertext
         cipher' = T.drop bits_in_int cipher
         -- also there's a strange thing with following bits..
-        cipher'' = cipher' `T.snoc` '0' `T.append` (T.replicate 500 . T.singleton) '1'
+        cipher'' = cipher' `T.snoc` '0' `T.append` (T.repeat '1')
         -- BINGO! TODO: not a kosyl solution
     in  decode'debug ' ' init_low init_high init_repres cipher''
     where

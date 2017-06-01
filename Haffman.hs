@@ -11,9 +11,9 @@ import Data.List
 import Data.Tuple
 import Data.Function
 import System.IO
-import qualified Data.Map     as M
-import qualified Data.Text    as T
-import qualified Data.Text.IO as TIO
+import qualified Data.Map          as M
+import qualified Data.Text.Lazy    as T
+import qualified Data.Text.Lazy.IO as TIO
 
 import Utils
 

@@ -9,9 +9,9 @@ module Utils
 , probs_from_text
 ) where
 
-import qualified Data.Map     as M
-import qualified Data.Text    as T
-import qualified Data.Text.IO as TIO
+import qualified Data.Map          as M
+import qualified Data.Text.Lazy    as T
+import qualified Data.Text.Lazy.IO as TIO
 import System.IO
 import System.Environment
 import Data.Function
