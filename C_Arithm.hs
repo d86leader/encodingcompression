@@ -31,7 +31,8 @@ bit_to_text '1' = 1
 bit_to_text '0' = 0
 
 -- each symbol is bijected to his cumulative probability and
--- the previous symbols's one
+-- the previous symbols's one. It's all exactly this: end of this symbol's interval
+-- and the interval's beginning
 -- note to self: cumulative probability is a sum of probabilities of all symbols
 -- before current including current
 type Prob_map = M.Map Char (Integer, Integer)
@@ -67,6 +68,7 @@ encode cumul_frequences text del =
         encode' p_low p_high text bits_to_follow
          | text == T.empty = T.empty
          | otherwise =
+            -- values for current interation
             let Just (symbol, rest)        = T.uncons text
                 (cumul_prob, cumul_pos) = cumul_frequences M.! symbol
                 range                   = p_high - p_low + 1
@@ -74,6 +76,7 @@ encode cumul_frequences text del =
                 low  = p_low + (range * cumul_pos)  `div` del
                 high = p_low + (range * cumul_prob) `div` del - 1
                 --
+                -- do the exact shrinking and writing
                 (bits, n_low, n_high, btf) =
                     shrink_write low high bits_to_follow T.empty
             in  bits `T.append` encode' n_low n_high rest btf
@@ -97,7 +100,7 @@ encode cumul_frequences text del =
                 low  = (p_low  - half_int) * 2
                 high = (p_high - half_int) * 2 + 1
             in  shrink_write low high 0 r
-         -- write and opposite bit lare if in the middle
+         -- write and opposite bit later if in the middle
          | p_low >= first_qtr && p_high < third_qtr =
             let low  = (p_low  - first_qtr) * 2
                 high = (p_high - first_qtr) * 2 + 1
@@ -126,20 +129,18 @@ decode cumul_frequences cipher del =
         init_repres =
             T.foldl (\s c -> s * 2 + bit_to_text c) 0
                 $ T.take bits_in_int cipher
-        -- don't forget to drop reAd bits in ciphertext
+        -- don't forget to drop rêad bits in ciphertext
         cipher' = T.drop bits_in_int cipher
         -- also there's a strange thing with following bits..
         cipher'' = cipher' `T.snoc` '0' `T.append` (T.repeat '1')
-        -- BINGO! TODO: not a kosyl solution
+        --
     in  decode' init_low init_high init_repres cipher''
     where
         --
-        decode' low high repres bits
-         | bits == T.empty = T.pack "--the provided text seems to be incorrect"
-         | otherwise =
+        decode' low high repres bits =
             let range  = high - low + 1
                 accum  = ((repres - low + 1) * del - 1) `div` range
-                -- first symbol with cumulative frequency greater than accumulated
+                -- first symbol with cumulative frequency greater than accumulator
                 Just symbol = M.foldlWithKey (first_gt accum) Nothing cumul_frequences where
                     first_gt :: Integer -> Maybe Char -> Char -> (Integer, Integer) -> Maybe Char
                     first_gt _ (Just c) _ _ = Just c
@@ -159,8 +160,6 @@ decode cumul_frequences cipher del =
                 else symbol `T.cons` decode' n_low n_high n_repr n_bits
         --
         shrink_read low high x bits 
---          | bits == T.empty = (0, 0, 0, T.empty) -- kostyl
-         | bits == T.empty = error "something went wrong when decoding!"
          | high < half_int =
             let val = ((x * 2) `mod` integer_modulo) + (bit_to_text . T.head $ bits)
                 n_low  = 2 * low
