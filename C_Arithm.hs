@@ -18,9 +18,9 @@ import Utils
 ------ Model ------
 -- We're using static model, so it's all easy
 
-bits_in_int = 16
+bits_in_int     = 16
 largest_integer = 2 ^ bits_in_int - 1
-integer_modulo = 2 ^ bits_in_int
+integer_modulo  = 2 ^ bits_in_int
 
 first_qtr = largest_integer `div` 4 + 1
 half_int  = first_qtr * 2
@@ -28,6 +28,7 @@ third_qtr = first_qtr * 3
 
 eof = '\0'
 
+bit_to_text :: Char -> Integer
 bit_to_text '1' = 1
 bit_to_text '0' = 0
 
@@ -58,15 +59,15 @@ encode :: Prob_map -> T.Text -> Integer -> T.Text
 encode cumul_frequences text del =
     let init_low  = 0
         init_high = largest_integer
-    in observe "encode: " $ encode'debug init_low init_high text
+    in observe "encode: " $ encode'debug 0 largest_integer init_low init_high text 0
     --
     where
-        encode'debug = observe "encoding: " encode'
+        encode'debug low high = observe ("encoding with prev: " ++ (show low) ++ " " ++ (show high)) encode'
         -- takes symbols one by one, shrinks (and extends back) the interval
         -- and writes the bits
         -- it is assumed that eof is present in text as the last and only last symbol
-        encode' :: Integer -> Integer -> T.Text -> T.Text
-        encode' p_low p_high text
+        encode' :: Integer -> Integer -> T.Text -> Integer -> T.Text
+        encode' p_low p_high text bits_to_follow
          | text == T.empty = T.empty
          | otherwise =
             let Just (symbol, rest)        = T.uncons text
@@ -76,13 +77,14 @@ encode cumul_frequences text del =
                 low  = p_low + (range * cumul_pos)  `div` del
                 high = p_low + (range * cumul_prob) `div` del - 1
                 --
-                (bits, n_low, n_high) = shrink_write low high 0 T.empty
-            in  bits `T.append` encode'debug n_low n_high rest
+                (bits, n_low, n_high, btf) =
+                    shrink_write low high bits_to_follow T.empty
+            in  bits `T.append` encode'debug low high n_low n_high rest btf
         --
         -- instruction on how to shrink the interval and restore it back
         -- (to keep precision), and which bits correspond to what
         shrink_write :: Integer -> Integer -> Integer -> T.Text
-            -> (T.Text, Integer, Integer)
+            -> (T.Text, Integer, Integer, Integer)
         shrink_write p_low p_high bits_to_foll result
          -- zero if in lower half
          | p_high < half_int =
@@ -105,7 +107,7 @@ encode cumul_frequences text del =
             in  shrink_write low high (bits_to_foll + 1) result
          --
          -- it is said that this algorithm always terminates
-         | otherwise = (result, p_low, p_high)
+         | otherwise = (result, p_low, p_high, bits_to_foll)
         --
         -- writes a bit and not that bit repeated
         write_bits value following =
