@@ -17,9 +17,6 @@ import System.Environment
 import Data.Function
 import Data.Tuple
 
-import Debug.Hood.Observe
-
-instance Observable T.Text where {observer = observeBase}
 
 type Thesaurus = M.Map Char T.Text
 

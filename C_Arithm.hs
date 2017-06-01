@@ -11,8 +11,6 @@ import qualified Data.Text.Lazy    as T
 import qualified Data.Text.Lazy.IO as TIO
 import System.IO
 
-import Debug.Hood.Observe
-
 import Utils
 
 ------ Model ------
@@ -59,10 +57,9 @@ encode :: Prob_map -> T.Text -> Integer -> T.Text
 encode cumul_frequences text del =
     let init_low  = 0
         init_high = largest_integer
-    in observe "encode: " $ encode'debug 0 largest_integer init_low init_high text 0
+    in  encode' init_low init_high text 0
     --
     where
-        encode'debug low high = observe ("encoding with prev: " ++ (show low) ++ " " ++ (show high)) encode'
         -- takes symbols one by one, shrinks (and extends back) the interval
         -- and writes the bits
         -- it is assumed that eof is present in text as the last and only last symbol
@@ -79,7 +76,7 @@ encode cumul_frequences text del =
                 --
                 (bits, n_low, n_high, btf) =
                     shrink_write low high bits_to_follow T.empty
-            in  bits `T.append` encode'debug low high n_low n_high rest btf
+            in  bits `T.append` encode' n_low n_high rest btf
         --
         -- instruction on how to shrink the interval and restore it back
         -- (to keep precision), and which bits correspond to what
@@ -134,10 +131,8 @@ decode cumul_frequences cipher del =
         -- also there's a strange thing with following bits..
         cipher'' = cipher' `T.snoc` '0' `T.append` (T.repeat '1')
         -- BINGO! TODO: not a kosyl solution
-    in  decode'debug ' ' init_low init_high init_repres cipher''
+    in  decode' init_low init_high init_repres cipher''
     where
-        decode'debug symbol = observe ("previous symbol: " ++ [symbol]) decode'
-        shrink'debug = observe "shrinking: low high first_bits all_bits" shrink_read
         --
         decode' low high repres bits
          | bits == T.empty = T.pack "--the provided text seems to be incorrect"
@@ -158,10 +153,10 @@ decode cumul_frequences cipher del =
                 c_low  = low + (range * cumul_pos)  `div` del
                 c_high = low + (range * cumul_prob) `div` del - 1
                 --
-                (n_low, n_high, n_repr, n_bits) = shrink'debug c_low c_high repres bits
+                (n_low, n_high, n_repr, n_bits) = shrink_read c_low c_high repres bits
             in  if symbol == '\0'
                 then T.singleton symbol
-                else symbol `T.cons` decode'debug symbol n_low n_high n_repr n_bits
+                else symbol `T.cons` decode' n_low n_high n_repr n_bits
         --
         shrink_read low high x bits 
 --          | bits == T.empty = (0, 0, 0, T.empty) -- kostyl
@@ -170,19 +165,19 @@ decode cumul_frequences cipher del =
             let val = ((x * 2) `mod` integer_modulo) + (bit_to_text . T.head $ bits)
                 n_low  = 2 * low
                 n_high = 2 * high + 1
-            in  shrink'debug n_low n_high val (T.tail bits)
+            in  shrink_read n_low n_high val (T.tail bits)
          --
          | low >= half_int =
             let val = (((x - half_int) * 2) `mod` integer_modulo) + (bit_to_text . T.head $ bits)
                 n_low  = 2 * (low - half_int)
                 n_high = 2 * (high - half_int) + 1
-            in  shrink'debug n_low n_high val (T.tail bits)
+            in  shrink_read n_low n_high val (T.tail bits)
          --
          | low >= first_qtr && high < third_qtr =
             let val = ((x - first_qtr) * 2) `mod` integer_modulo + (bit_to_text . T.head $ bits)
                 n_low  = 2 * (low - first_qtr)
                 n_high = 2 * (high - first_qtr) + 1
-            in  shrink'debug n_low n_high val (T.tail bits)
+            in  shrink_read n_low n_high val (T.tail bits)
          | otherwise = (low, high, x, bits)
 
 ------ Utilitary routine ------

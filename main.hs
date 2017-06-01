@@ -7,8 +7,6 @@ import qualified Arithmetic
 import qualified C_Arithm
 import Utils
 
-import Debug.Hood.Observe
-
 coderFromMode "haffman_e" = Haffman.encodeFromFiles
 coderFromMode "haffman_d" = Haffman.decodeFromFiles
 coderFromMode "haffman_b" = Haffman.buildFromFiles
@@ -33,4 +31,4 @@ main = do
 	else
 		let (mode : filenames) = argv
 		    coder = coderFromMode mode
-		in  runO $ coder filenames >>= TIO.putStr
+		in  coder filenames >>= TIO.putStr
